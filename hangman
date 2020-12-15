@@ -1,0 +1,152 @@
+"""
+
+Author:Zachary R.
+Date: 12/14/20
+Program Name: GUI Hangman
+Description: Hangman GUI program
+
+"""
+#Imports classes
+from breezypythongui import EasyFrame
+from tkinter import *
+import random
+
+
+class Hangman(EasyFrame):
+    #Creates GUI environment
+    def __init__(self):
+        """Creates the dice, and sets up the Images and labels
+        for the two dice to be displayed, the state label,
+        and the two command buttons."""
+        #Opens file and puts in list
+        file = open('words.txt', 'r')
+        self.wordList = file.readlines()
+        #Defines the dictinary required
+        dict = {"win":"You Win!\nThe word was: ",
+                     "lose":"You Lose!\nThe word was: ",
+                     "thanks":"\nThanks for playing!"}
+        #Initiate Variables            
+        self.wrong=0
+        self.guessList = ""
+        self.word = random.choice(self.wordList)
+        self.notGuessed = '*' * len(self.word)
+        EasyFrame.__init__(self, title = "Hangman")
+        #initiates panel to add color
+        dataPanel = self.addPanel(row = 0, column = 0,
+                                  background = "blue", columnspan = 4)
+        #initiates panel to add color
+        gifPanel = self.addPanel(row = 1, column = 0,
+                                  background = "black", columnspan = 4)
+        #initiates panel to add color
+        hudPanel = self.addPanel(row = 2, column = 0,
+                                  background = "blue", columnspan = 4, rowspan = 2)
+        #Displays hangman gif
+        self.manLabel = self.addLabel("", row = 1,
+                                       column = 1)
+        #Displays label to enter guess
+        self.nameLabel = self.addLabel(row = 0, column = 0,
+                                       text = "Enter Guess", background = "blue",
+                                       foreground = "white",font = "helvetica")
+        #Input text
+        self.guessField = self.addTextField("", row = 0, column = 1)
+        self.nameLabel = self.addLabel(row = 2, column = 0,
+                                       text = "Word to Guess   :", background = "blue",
+                                       foreground = "white", font = "helvetica")
+        #Word
+        self.stateLabel = self.addLabel(self.notGuessed[:-1], row = 2, column = 1,
+                                        background = "blue", foreground = "white", font = "helvetica")
+        self.nameLabel = self.addLabel(row = 3, column = 0,
+                                       text = "Letters Guessed :", background = "blue",
+                                       foreground = "white", font = "helvetica")
+        #Guessed Letters
+        self.guessLabel = self.addLabel("", row = 3, column = 1, background = "blue",
+                                        foreground = "white",  font = "helvetica")
+        #Input guess button
+        self.withdrawButton = self.addButton(row = 0, column = 2,
+                                             text = "Submit",
+                                       command = self.submit)
+        #Botton to play game again
+        self.tryAgain = self.addButton(row = 0, column = 3,
+                                             text = "Try Again",
+                                       command = self.retry)
+        #Binds enter key to hit submit
+        self.guessField.bind("<Return>", lambda event: self.submit(dict))
+
+        #refreshes hangman picture
+        self.refreshImages()\
+        
+
+
+    #Button to submit guess
+    def submit(self, dict):
+        #Initiates variable
+        self.right=0
+        guess = self.guessField.getText()
+        #Computes if the guess is in the guesslist variable
+        if guess not in self.guessList:
+            if guess not in self.word:
+                # Adds wrong guesses that have not already been made
+                self.wrong+=1
+                #Changes the picture of hangman before popup can be called
+                self.refreshImages()
+                if self.wrong==6:
+                    #Goes to lose function that launches lose popup
+                    self.lose(dict)
+            # Adds the guesses letter to guest list
+            self.guessList += guess
+            self.guessLabel["text"] = self.guessList
+            self.guessField.setText("")
+            #Displays correct guess and shows guessed letters in word
+            if guess in self.word:
+                word=self.word
+                unguessed = '*' * len(word)
+                for i in range(len(word)): # Replace blanks with correctly guessed letters.
+                    if word[i] in self.guessList:
+                        self.right+=1
+                        unguessed = unguessed[:i] + word[i] + unguessed[i+1:]
+                        # The -1 takes off unwanted space at end
+                        self.stateLabel["text"] = unguessed[:-1]
+                        wordCheck=self.word[:-1]
+                        if (self.right) == len(wordCheck):
+                            self.win(dict)
+
+    
+    # Sets image to hangman state
+    def refreshImages(self):
+        """Updates the images in the window."""
+        #Tries to display picture of hangman
+        try:
+            fileName = "man/" + str(self.wrong) + ".gif"
+            self.image = PhotoImage(file = fileName)
+            self.manLabel["image"] = self.image
+        #if no guess are wrong displays default
+        except Exception:
+            fileName = "man/none.gif"
+            self.image = PhotoImage(file = fileName)
+            self.manLabel["image"] = self.image
+            
+    # displays loss popup
+    def lose(self, dict):
+        self.messageBox(title = "Sorry", message = (dict["lose"]+self.word+dict["thanks"]))
+
+    #Displays win popup
+    def win(self, dict):
+        self.messageBox(title = "Congrats!", message =
+                        (dict["win"]+self.word+dict["thanks"]))
+    #Function that sets all variables back to nothing and picks a new word
+    def retry(self):
+        self.wrong=0
+        self.right=0
+        self.guessList = ""
+        self.word = random.choice(self.wordList)
+        self.unguessed = '*' * len(self.word)
+        self.refreshImages()
+        self.guessLabel["text"] = self.guessList
+        self.notGuessed = '*' * len(self.word)
+        self.stateLabel["text"] = self.notGuessed[:-1]
+        
+def main():
+    Hangman().mainloop()
+
+if __name__ == "__main__":
+    main()
